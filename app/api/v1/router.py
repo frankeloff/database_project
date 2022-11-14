@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import create_access_token
 from datetime import timedelta
 from app.crud.user import user_crud
-from app.models.token import Token
+from app.schemas.token import Token
 from app.core.const import ACCESS_TOKEN_EXPIRE_MINUTES
 from app.api.v1.endpoints.user import router as user_router
-from app.api.v1.endpoints.visitor import router as visitor_router
+from app.api.v1.endpoints.admin import router as admin_router
 
 api_router = APIRouter()
 
@@ -34,4 +34,4 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 api_router.include_router(user_router, prefix="/user")
-api_router.include_router(visitor_router, prefix="/visitor")
+api_router.include_router(admin_router, prefix="/admin")

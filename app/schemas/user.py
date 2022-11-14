@@ -3,12 +3,12 @@ from pydantic import EmailStr
 
 class BaseUser(BaseModel):
     full_name: str
-    telephone_number: int
+    telephone_number: str
     email: EmailStr
 
 class UserIn(BaseUser):
-    passport_series: int
-    passport_number: int
+    passport_series: str
+    passport_number: str
     password: str
 
     class Config:

@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException, status
 from app.core.const import ALGORITHM, SECRET_KEY
-from app.models.token import TokenData
+from app.schemas.token import TokenData
 from jose import JWTError, jwt
 from app.core.security import oauth2_scheme
 from app.database.database import engine
