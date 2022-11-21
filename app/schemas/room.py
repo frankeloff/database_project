@@ -11,17 +11,21 @@ class BaseRoomChar(BaseModel):
     floor: int
     square_meters: int
     price: int
-    photo: str
+
+class SimpleRoomDataOut(BaseRoom):
+    class Config:
+        orm_mode = True
 
 class RoomDataIn(BaseRoom, BaseRoomChar):
     class Config:
         orm_mode = True
 
 class RoomDataOut(BaseRoom):
+    photo: str = None
     class Config:
         orm_mode = True
 
-class AllRoomDataOut(BaseRoom, BaseRoomChar):
+class AllRoomDataOut(RoomDataOut, BaseRoomChar):
     class Config:
         orm_mode = True
 

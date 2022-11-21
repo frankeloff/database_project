@@ -2,17 +2,25 @@ from app.crud.base import BaseCRUD
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.user import UserIn
 from app.schemas.room import AllRoomDataOut
+from app.schemas.order import OrderIn
 from app.core.security import get_password_hash
 from app.models import User, Room, RoomCharacteristics, UserRole, Role, Booking
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from app.core.security import verify_password
 from app.schemas.room import RoomDataIn
+from app.schemas.order import AllBaseOrderInfo
 from datetime import date
+from fastapi import UploadFile, HTTPException
+from aiofile import async_open
+import os
 import datetime
 
 
 class UserCRUD(BaseCRUD):
+    async def get_me(self, db: AsyncSession, user: User):
+        return user
+
     async def create_user(self, db: AsyncSession, u: UserIn):
         password = u.password
         hash_password = get_password_hash(password)
@@ -91,7 +99,7 @@ class UserCRUD(BaseCRUD):
 
     async def get_user_role(self, db: AsyncSession, email: str):
         query = (
-            select(User.full_name, Role.role_name)
+            select(Role.role_name)
             .select_from(UserRole)
             .join(User, User.user_id == UserRole.user_id)
             .join(Role, Role.role_id == UserRole.role_id)
@@ -102,7 +110,9 @@ class UserCRUD(BaseCRUD):
 
         return result.first()
 
-    async def create_room(self, db: AsyncSession, room_data: RoomDataIn):
+    async def create_room(
+        self, db: AsyncSession, room_data: RoomDataIn
+    ):
         room_db_obj = Room(
             **{"room_name": room_data.room_name, "is_booked": room_data.is_booked}
         )
@@ -117,7 +127,6 @@ class UserCRUD(BaseCRUD):
                 "floor": room_data.floor,
                 "square_meters": room_data.square_meters,
                 "price": room_data.price,
-                "photo": room_data.photo,
             }
         )
         db.add(room_ch_db_obj)
@@ -168,6 +177,10 @@ class UserCRUD(BaseCRUD):
 
     async def delete_room(self, db: AsyncSession, db_obj: Room, room_id: int):
         db_room_ch_obj = await user_crud.get_by_room_ch_id(db, room_id)
+        if db_room_ch_obj.photo:
+            path_to_file = db_room_ch_obj.photo
+            if os.path.isfile(path_to_file):
+                os.remove(path_to_file)
 
         await db.delete(db_room_ch_obj)
         await db.commit()
@@ -175,7 +188,7 @@ class UserCRUD(BaseCRUD):
         await db.delete(db_obj)
         await db.commit()
 
-        return 0
+        return "done"
 
     async def get_current_room(self, db: AsyncSession, db_obj: Room):
         db_room_ch_obj = await user_crud.get_by_room_ch_id(db, db_obj.room_id)
@@ -220,7 +233,9 @@ class UserCRUD(BaseCRUD):
 
         return result_arr
 
-    async def book_a_room(self, db: AsyncSession, mail: str, room_id: int, arrival_date, departure_date):
+    async def book_a_room(
+        self, db: AsyncSession, mail: str, room_id: int, arrival_date, departure_date
+    ):
         db_obj = Booking(
             email=mail,
             room_id=room_id,
@@ -239,5 +254,120 @@ class UserCRUD(BaseCRUD):
 
         return 0
 
+    async def delete_booking(self, db: AsyncSession, room_id: int):
+        query = select(Booking).where(Booking.room_id == room_id)
+        result = await db.execute(query)
+        db_obj = result.scalars().first()
 
+        await db.delete(db_obj)
+        await db.commit()
+
+        return 0
+
+    async def get_all_orders(self, db: AsyncSession):
+        result = await db.execute(select(Booking))
+
+        res_arr = []
+
+        for item in result.scalars().all():
+            res = Booking(
+                email=item.email,
+                room_id=item.room_id,
+                arrival_date=str(item.arrival_date),
+                departure_date=str(item.departure_date),
+            )
+
+            res_arr.append(res)
+
+        return res_arr
+
+    async def get_user_orders(self, db: AsyncSession, email: str):
+        query = select(Booking).where(Booking.email == email)
+        booking_result = await db.execute(query)
+
+        query = select(Room).where(
+            Room.room_id.in_(
+                select(Booking.room_id).where(Booking.email == email).as_scalar()
+            )
+        )
+
+        room_result = await db.execute(query)
+
+        query = select(RoomCharacteristics).where(
+            RoomCharacteristics.room_id.in_(
+                select(Booking.room_id).where(Booking.email == email).as_scalar()
+            )
+        )
+
+        room_char_result = await db.execute(query)
+
+        res_arr = []
+
+        for item in zip(
+            booking_result.fetchall(),
+            room_result.fetchall(),
+            room_char_result.fetchall(),
+        ):
+            print(item)
+            res_item = AllBaseOrderInfo(
+                email=item[0][0].email,
+                room_id=item[0][0].room_id,
+                arrival_date=str(item[0][0].arrival_date),
+                departure_date=str(item[0][0].departure_date),
+                room_name=item[1][0].room_name,
+                is_booked=item[1][0].is_booked,
+                number_of_rooms=item[2][0].number_of_rooms,
+                floor=item[2][0].floor,
+                square_meters=item[2][0].square_meters,
+                price=item[2][0].price,
+                photo=item[2][0].photo,
+            )
+
+            res_arr.append(res_item)
+
+        return res_arr
+
+    async def get_current_order(self, db: AsyncSession, email: str, room_id: int):
+        query = select(Booking).where(
+            Booking.email == email, Booking.room_id == room_id
+        )
+        result = await db.execute(query)
+
+        return result.scalars().first()
+
+    async def update_current_order(
+        self, db: AsyncSession, update_obj: OrderIn, db_obj: Booking
+    ):
+        encoded_object_in = jsonable_encoder(db_obj)
+        if isinstance(update_obj, dict):
+            update_data = update_obj
+        else:
+            update_data = update_obj.dict()
+
+        for field in encoded_object_in:
+            if field in update_data:
+                if field == "arrival_date" or field == "departure_date":
+                    setattr(
+                        db_obj,
+                        field,
+                        date.fromisoformat(date.fromisoformat(update_data[field])),
+                    )
+                else:
+                    setattr(db_obj, field, update_data[field])
+
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+
+        return db_obj
+
+    async def create_picture_for_room(self, db: AsyncSession, room_id: int, path: int):
+        db_obj = await user_crud.get_by_room_ch_id(db, room_id=room_id)
+        db_obj.photo = path
+
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+
+        return "done"
 user_crud = UserCRUD()

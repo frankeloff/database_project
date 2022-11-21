@@ -10,4 +10,4 @@ from .role import Role, UserRole
 from .room import Room, RoomCharacteristics
 from .booking import Booking
 
-__all__ = ["metadata", 'User', 'Role', 'UserRole', 'Booking', 'Room', 'RoomCharacteristics']
+__all__ = ["metadata", 'User', 'Role', 'Booking', 'UserRole', 'Room', 'RoomCharacteristics']

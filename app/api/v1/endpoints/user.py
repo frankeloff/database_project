@@ -7,8 +7,12 @@ from app.schemas.role import RoleOut
 from datetime import date
 from app.schemas.room import AllRoomDataOut
 from typing import List
+from app.schemas.order import AllBaseOrderInfo
 router = APIRouter()
 
+@router.get("/me", response_model=UserIn)
+async def get_me(session=Depends(get_session), user=Depends(get_current_user),):
+    return await user_crud.get_me(session, user)
 
 @router.post("/", response_model=UserOut)
 async def create_user(c: UserIn, session=Depends(get_session)):
@@ -84,3 +88,9 @@ async def book_a_room(
         session, user.email, room_id, arrival_date, departure_date
     )
 
+@router.get("/get_user_orders", response_model=List[AllBaseOrderInfo])
+async def get_user_orders(
+    session=Depends(get_session),
+    user=Depends(get_current_user),
+):
+    return await user_crud.get_user_orders(session, user.email)
