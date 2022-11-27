@@ -361,7 +361,7 @@ class UserCRUD(BaseCRUD):
 
         return db_obj
 
-    async def create_picture_for_room(self, db: AsyncSession, room_id: int, path: int):
+    async def create_picture_for_room(self, db: AsyncSession, room_id: int, path: str):
         db_obj = await user_crud.get_by_room_ch_id(db, room_id=room_id)
         db_obj.photo = path
 

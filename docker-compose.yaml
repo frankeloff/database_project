@@ -1,8 +1,11 @@
 version: "3"
 
 services:
-  app:
-    build: .
+  api:
+    container_name: api
+    build: 
+      dockerfile: docker/app.Dockerfile
+      context: .
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -13,10 +16,10 @@ services:
      - database
     volumes:
       - ./app:/src/app:rw
-      - ./pictures:/src/pictures:rw
-    ports:
-      - 8000:8000
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./images:/src/images:rw
+    # ports:
+    #   - 8000:8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT} --reload
 
   database:
     container_name: hotel_db
@@ -30,3 +33,19 @@ services:
       - ./data:/var/lib/postgresql/data
     ports:
       - 5432:${POSTGRES_PORT}
+  
+  nginx:
+    build:
+      dockerfile: docker/nginx.Dockerfile
+      context: .
+    restart: unless-stopped
+    volumes:
+      - ./images:/www/data/images
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+    environment:
+      NGINX_PORT: ${NGINX_PORT}
+      APP_HOST: ${APP_HOST}
+      APP_PORT: ${APP_PORT}
+    depends_on:
+      - api

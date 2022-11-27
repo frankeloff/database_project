@@ -165,7 +165,7 @@ async def create_upload_file(
     if role[0] != "admin":
         raise HTTPException(status_code=403, detail="Not enough rights")
     file_name = file.filename
-    path = f"/src/pictures/{file_name}"
+    path = f"/src/images/{file_name}"
     async with async_open(path, 'wb') as f:
         try:
             while chunk:= await file.read(1024):
