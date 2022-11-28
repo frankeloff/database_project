@@ -165,13 +165,27 @@ async def create_upload_file(
     if role[0] != "admin":
         raise HTTPException(status_code=403, detail="Not enough rights")
     file_name = file.filename
-    path = f"/src/images/{file_name}"
+    path = f"images/{file_name}"
     async with async_open(path, 'wb') as f:
         try:
             while chunk:= await file.read(1024):
-                await f.write(chunk)
-            
+                await f.write(chunk)       
         except:
             raise HTTPException(status_code=404, detail='File not found')
 
     return await user_crud.create_picture_for_room(session, id, path)
+
+@router.get("/get_path_to_file/")
+async def get_path_to_file(
+    room_id: int,
+    session=Depends(get_session),
+    user=Depends(get_current_user),
+):
+    role = await user_crud.get_user_role(session, user.email)
+    if role[0] != "admin":
+        raise HTTPException(status_code=403, detail="Not enough rights")
+    db_obj = await user_crud.get_by_room_ch_id(session, room_id=room_id)
+    if not db_obj:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    return await user_crud.get_picture(session, room_id)

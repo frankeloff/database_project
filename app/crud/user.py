@@ -370,4 +370,11 @@ class UserCRUD(BaseCRUD):
         await db.refresh(db_obj)
 
         return "done"
+
+    async def get_picture(self, db: AsyncSession, room_id: int):
+        query = select(RoomCharacteristics.photo).where(RoomCharacteristics.room_id == room_id)
+        result = await db.execute(query)
+
+        return result.first()
+
 user_crud = UserCRUD()
