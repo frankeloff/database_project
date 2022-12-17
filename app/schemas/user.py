@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from pydantic import EmailStr
+from typing import Optional
 
 class BaseUser(BaseModel):
     full_name: str
@@ -9,7 +10,7 @@ class BaseUser(BaseModel):
 class UserIn(BaseUser):
     passport_series: str
     passport_number: str
-    password: str
+    password: Optional[str]
 
     class Config:
         orm_mode = True

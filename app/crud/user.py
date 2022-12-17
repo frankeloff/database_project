@@ -50,7 +50,8 @@ class UserCRUD(BaseCRUD):
         for field in encoded_object_in:
             if field in update_data:
                 if field == "password":
-                    setattr(db_obj, field, get_password_hash(update_data[field]))
+                    if update_data[field] != None:
+                        setattr(db_obj, field, get_password_hash(update_data[field]))
                 else:
                     setattr(db_obj, field, update_data[field])
 
@@ -176,6 +177,13 @@ class UserCRUD(BaseCRUD):
         return db_obj
 
     async def delete_room(self, db: AsyncSession, db_obj: Room, room_id: int):
+        query = select(Booking).where(Booking.room_id == room_id)
+        result = await db.execute(query)
+        bd_obj = result.scalars().first()
+        if bd_obj:
+            await db.delete(bd_obj)
+            await db.commit()
+
         db_room_ch_obj = await user_crud.get_by_room_ch_id(db, room_id)
         if db_room_ch_obj.photo:
             path_to_file = db_room_ch_obj.photo
