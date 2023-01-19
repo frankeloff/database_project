@@ -8,9 +8,11 @@ from app.core.security import oauth2_scheme
 from app.database.database import engine
 from app.crud.user import user_crud
 
+
 async def get_session() -> AsyncGenerator:
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
+
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_session)

@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 from pydantic import BaseSettings, PostgresDsn, validator
 
+
 class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: int
@@ -26,7 +27,9 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_HOST"),
             path=f"/{values.get('POSTGRES_DB')}",
         )
+
     class Config:
         env_file = ".env"
+
 
 settings = Settings()

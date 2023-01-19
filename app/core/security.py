@@ -15,6 +15,7 @@ def verify_password(password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()
     if expires_delta:

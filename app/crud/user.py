@@ -111,9 +111,7 @@ class UserCRUD(BaseCRUD):
 
         return result.first()
 
-    async def create_room(
-        self, db: AsyncSession, room_data: RoomDataIn
-    ):
+    async def create_room(self, db: AsyncSession, room_data: RoomDataIn):
         room_db_obj = Room(
             **{"room_name": room_data.room_name, "is_booked": room_data.is_booked}
         )
@@ -380,9 +378,12 @@ class UserCRUD(BaseCRUD):
         return "done"
 
     async def get_picture(self, db: AsyncSession, room_id: int):
-        query = select(RoomCharacteristics.photo).where(RoomCharacteristics.room_id == room_id)
+        query = select(RoomCharacteristics.photo).where(
+            RoomCharacteristics.room_id == room_id
+        )
         result = await db.execute(query)
 
         return result.first()
+
 
 user_crud = UserCRUD()

@@ -13,6 +13,7 @@ from app.api.v1.endpoints.admin import router as admin_router
 
 api_router = APIRouter()
 
+
 @api_router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -32,6 +33,7 @@ async def login_for_access_token(
         data={"sub": db_obj.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 api_router.include_router(user_router, prefix="/user")
 api_router.include_router(admin_router, prefix="/admin")
